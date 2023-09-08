@@ -397,9 +397,38 @@ async def customize():
 async def plug(plugin_channels):
     from .. import ultroid_bot
     from .utils import load_addons
+    from .. import asst, udB
 
     if ultroid_bot._bot:
-        LOGS.info("Plugin Channels can't be used in 'BOTMODE'")
+        if os.path.exists("addons") and not os.path.exists("addons/.git"):
+            shutil.rmtree("addons")
+        if not os.path.exists("addons"):
+            os.mkdir("addons")
+        if not os.path.exists("addons/__init__.py"):
+            with open("addons/__init__.py", "w") as f:
+                f.write("from plugins import *\n\nbot = ultroid_bot")
+        LOGS.info("Loading Plugins From Bot Mode")
+        xx=udB.get_key('PLUGS')
+        if not xx: return
+        try:
+            for i in xx['msg']:
+                ms=await asst.get_messages(xx['chat_id'],ids=i)
+                if ms and ms.file and ms.file.name.endswith('.py'):
+                    plugin = "addons/" + ms.file.name.replace("_", "-").replace("|", "-")
+                    if not os.path.exists(plugin):
+                        await asyncio.sleep(0.6)
+                        if ms.text == "#IGNORE":
+                            continue
+                        plugin = await ms.download_media(plugin)
+                        try:
+                            load_addons(plugin)
+                            LOGS.info(f"LOADED :- {plugin}")
+                        except Exception as e:
+                            LOGS.info(f"Ultroid - BOT_MODE - ERROR - {plugin}")
+                            LOGS.exception(e)
+                            os.remove(plugin)
+        except Exception as er:
+            LOGS.exception(er)
         return
     if os.path.exists("addons") and not os.path.exists("addons/.git"):
         shutil.rmtree("addons")
