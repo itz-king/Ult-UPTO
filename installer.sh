@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-REPO="https://github.com/TeamUltroid/Ultroid.git"
+REPO="https://github.com/itz-king/Ult-UPTO.git"
 CURRENT_DIR="$(pwd)"
 ENV_FILE_PATH=".env"
 DIR="/root/TeamUltroid"
@@ -97,6 +97,47 @@ check_python() {
     fi
 }
 
+clone_repo() {
+    # check if pyultroid, startup, plugins folders exist
+    cd $DIR
+    if [ -d $DIR ]; then
+        if [ -d $DIR/.git ]; then
+            echo -e "Updating Ultroid ${BRANCH}... "
+            cd $DIR
+            git pull
+            currentbranch="$(git rev-parse --abbrev-ref HEAD)"
+            if [ ! $BRANCH ]; then
+                export BRANCH=$currentbranch
+            fi
+            case $currentbranch in
+            $BRANCH)
+                # do nothing
+                ;;
+            *)
+                echo -e "Switching to branch ${BRANCH}... "
+                echo -e $currentbranch
+                git checkout $BRANCH
+                ;;
+            esac
+        else
+            rm -rf $DIR
+            exit 1
+        fi
+        if [ -d "addons" ]; then
+            cd addons
+            git pull
+        fi
+        return
+    else
+        if [ ! $BRANCH ]; then
+            export BRANCH="main"
+        fi
+        mkdir -p $DIR
+        echo -e "Cloning Ultroid ${BRANCH}... "
+        git clone -b $BRANCH $REPO $DIR
+    fi
+}
+
 install_requirements() {
     pip3 install -q --upgrade pip
     echo -e "\n\nInstalling requirements... "
@@ -161,6 +202,7 @@ main() {
     fi
     (check_dependencies)
     (check_python)
+    (clone_repo)
     (install_requirements)
     (railways_dep)
     (dep_install)
